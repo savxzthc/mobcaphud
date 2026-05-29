@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "mobcaphud",
+  "version": "${mod_version}",
+  "name": "MobCap HUD",
+  "description": "Real-time HUD showing current mob counts vs mob caps for each spawn category.",
+  "authors": [
+    "savxz"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "dev.savxz.mobcaphud.MobCapHud"
+    ],
+    "client": [
+      "dev.savxz.mobcaphud.MobCapHudClient"
+    ],
+    "modmenu": [
+      "dev.savxz.mobcaphud.compat.ModMenuApiImpl"
+    ]
+  },
+  "mixins": [
+    "mobcaphud.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": ">=${fabric_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=${java_version}",
+    "cloth-config": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+versions/*/build/
+
+# Generated run directories
+run/
+runs/
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+
+# Logs and crash reports
+*.log
+crash-reports/
+hs_err_pid*
+replay_pid*
+
+# Build artifacts
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# OS files
+.DS_Store
+Thumbs.db

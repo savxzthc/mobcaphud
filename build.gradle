@@ -1,0 +1,184 @@
+plugins {
+    id 'fabric-loom' version '1.13.4' apply false
+}
+
+ext.targets = [
+        '1.20.1' : [
+                yarn        : '1.20.1+build.10',
+                loader      : '0.16.10',
+                fabricApi   : '0.92.9+1.20.1',
+                clothConfig : '11.1.136',
+                modMenu     : '7.2.2',
+                java        : 17
+        ],
+        '1.20.4' : [
+                yarn        : '1.20.4+build.3',
+                loader      : '0.15.1',
+                fabricApi   : '0.97.3+1.20.4',
+                clothConfig : '13.0.138',
+                modMenu     : '9.2.0',
+                java        : 17
+        ],
+        '1.20.6' : [
+                yarn        : '1.20.6+build.3',
+                loader      : '0.15.6',
+                fabricApi   : '0.100.8+1.20.6',
+                clothConfig : '14.0.139',
+                modMenu     : '10.0.0',
+                java        : 21
+        ],
+        '1.21.1' : [
+                yarn        : '1.21.1+build.3',
+                loader      : '0.15.11',
+                fabricApi   : '0.116.12+1.21.1',
+                clothConfig : '15.0.140',
+                modMenu     : '11.0.4',
+                java        : 21
+        ],
+        '1.21.4' : [
+                yarn        : '1.21.4+build.8',
+                loader      : '0.16.9',
+                fabricApi   : '0.119.4+1.21.4',
+                clothConfig : '17.0.144',
+                modMenu     : '13.0.4',
+                java        : 21
+        ],
+        '1.21.5' : [
+                yarn        : '1.21.5+build.1',
+                loader      : '0.16.10',
+                fabricApi   : '0.128.2+1.21.5',
+                clothConfig : '18.0.145',
+                modMenu     : '14.0.2',
+                java        : 21
+        ],
+        '1.21.8' : [
+                yarn        : '1.21.8+build.1',
+                loader      : '0.16.13',
+                fabricApi   : '0.136.1+1.21.8',
+                clothConfig : '19.0.147',
+                modMenu     : '15.0.2',
+                java        : 21
+        ],
+        '1.21.11': [
+                yarn        : '1.21.11+build.6',
+                loader      : '0.17.3',
+                fabricApi   : '0.141.4+1.21.11',
+                clothConfig : '21.11.153',
+                modMenu     : '17.0.0',
+                java        : 21
+        ]
+]
+
+allprojects {
+    version = rootProject.mod_version
+    group = rootProject.maven_group
+}
+
+subprojects {
+    apply plugin: 'fabric-loom'
+    apply plugin: 'maven-publish'
+
+    String minecraftVersion = project.projectDir.name
+    Map<String, Object> target = rootProject.ext.targets[minecraftVersion]
+    if (target == null) {
+        throw new GradleException("No target configuration for ${minecraftVersion}")
+    }
+
+    base {
+        archivesName = "${rootProject.archives_base_name}-${minecraftVersion}"
+    }
+
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        maven {
+            name = 'TerraformersMC'
+            url = 'https://maven.terraformersmc.com/releases/'
+        }
+        maven {
+            name = 'Shedaniel'
+            url = 'https://maven.shedaniel.me/'
+        }
+        mavenCentral()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${minecraftVersion}"
+        mappings "net.fabricmc:yarn:${target.yarn}:v2"
+        modImplementation "net.fabricmc:fabric-loader:${target.loader}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${target.fabricApi}"
+
+        modImplementation(include("me.shedaniel.cloth:cloth-config-fabric:${target.clothConfig}")) {
+            exclude(group: 'net.fabricmc.fabric-api')
+        }
+
+        modCompileOnly("com.terraformersmc:modmenu:${target.modMenu}") {
+            transitive = false
+        }
+    }
+
+    sourceSets {
+        main {
+            java.setSrcDirs([])
+            resources.setSrcDirs([])
+            java.srcDir rootProject.file('src/common/java')
+            if (minecraftVersion in ['1.21.8', '1.21.11']) {
+                java.srcDir rootProject.file('src/matrix2/java')
+            } else {
+                java.srcDir rootProject.file('src/pre1218/java')
+            }
+            if (minecraftVersion == '1.21.11') {
+                java.srcDir file('src/main/java')
+            } else {
+                java.srcDir rootProject.file('src/pre12111/java')
+            }
+            resources.srcDir rootProject.file('src/common/resources')
+        }
+    }
+
+    processResources {
+        Map<String, String> properties = [
+                mod_version      : rootProject.mod_version,
+                minecraft_version: minecraftVersion,
+                loader_version   : target.loader,
+                fabric_version   : target.fabricApi,
+                java_version     : target.java.toString(),
+                mixin_compatibility: "JAVA_${target.java}"
+        ]
+
+        inputs.properties(properties)
+
+        filesMatching(['fabric.mod.json', 'mobcaphud.mixins.json']) {
+            expand(properties)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.release = target.java as int
+    }
+
+    tasks.withType(Jar).configureEach {
+        from(rootProject.file('LICENSE'))
+        from(rootProject.file('THIRD_PARTY_NOTICES.md'))
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.toVersion(target.java)
+        targetCompatibility = JavaVersion.toVersion(target.java)
+        withSourcesJar()
+    }
+
+    publishing {
+        publications {
+            create('mavenJava', MavenPublication) {
+                artifactId = "${rootProject.archives_base_name}-${minecraftVersion}"
+                from components.java
+            }
+        }
+
+        repositories {
+        }
+    }
+}
